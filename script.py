@@ -8,7 +8,7 @@ import json
 import tomllib
 
 def getPath(url):
-    return urlparse(git_url).path.split("/")[-1]
+    return urlparse(url).path.split("/")[-1]
 
 def clone(url, isWiki):
     path = getPath(url)
@@ -24,7 +24,7 @@ def clone(url, isWiki):
 def toTitle(file: str):
     return file.replace("-", " ").replace("_", " ").strip()
 
-git_url = ""
+git_url = "https://github.com/cassiancc/Item-Descriptions" # FIX BEFORE COMMIT
 
 
 
@@ -48,7 +48,6 @@ id = git_path.lower()
 
 # Start script
 # clone(git_url, False) # Clone the main branch
-# clone("https://github.com/Sinytra/Wiki", False) # Clone the wiki
 
 
 # Copy wiki over to a working directory, ignoring git files.
@@ -89,4 +88,14 @@ with open(f"docs/{id}/_meta.json", 'w', encoding="utf8") as wiki:
     wiki.write(json.dumps(meta, indent=2))
 
 print()
-print(f"Converted the GitHub Wiki of {git_path.replace("_", " ").replace("-", " ")} to a Modded Minecraft Wiki. Copy the newly generated docs folder into its GitHub repository.")
+print(f"Converted the GitHub Wiki of {toTitle(git_path)} to a Modded Minecraft Wiki. Copy the newly generated docs folder into its GitHub repository.")
+
+shouldRun = input("Would you like to preview the Wiki? (y/n)\n")
+if (shouldRun[0].lower() == "y"):
+    os.environ['ENABLE_LOCAL_PREVIEW'] = "true" # Set the Wiki to local preview.
+    os.environ['LOCAL_DOCS_ROOTS'] = f"./example/docs/{id}"
+    clone("https://github.com/Sinytra/Wiki", False) # Clone the wiki
+    shutil.copytree("docs", 'Wiki/example/docs', dirs_exist_ok=True, ignore=shutil.ignore_patterns('.git'))
+    os.chdir("Wiki") # Open the Wiki
+    os.system("npm install") # Install Wiki Dependencies
+    os.system("npm run dev") # Run the Wiki
