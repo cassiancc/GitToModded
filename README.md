@@ -15,5 +15,6 @@ pip install gitpython
 ```
 
 ## Usage
-- Change the `git_url` variable to the URL of your repository.
 - Run `script.py`
+- Enter in a GitHub repository to download and convert.
+- The docs will be generated into a `/docs/modname` folder. You can then copy that folder into your repository.
