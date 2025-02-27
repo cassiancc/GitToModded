@@ -21,7 +21,7 @@ def clone(url, isWiki):
         print(path+ " exists on disk, no need to clone.")
 
 def toTitle(file: str):
-    return file.replace("-", " ")
+    return file.replace("-", " ").replace("_", " ").strip()
 
 git_url = ""
 
@@ -55,12 +55,15 @@ if (not os.path.isdir("docs")):
 if (not os.path.isdir("docs/"+id)):
     os.mkdir("docs/"+id)
 
+meta = {}
+
 # Read markdown files and convert to MDX
 for file in Path('working').glob('*'):
     with open(file, 'r', encoding="utf8") as original:
         old = original.read()
         with open(f"docs/{id}/{file.name.replace(".md", ".mdx")}", 'w', encoding="utf8") as modified:
             modified.write(f"---\ntitle: {toTitle(file.stem)}\n---\n\n{old}") # write the new line before
+            meta[file.name] = toTitle(file.stem)
 
 # Write wiki.json file
 with open(f"docs/{id}/sinytra-wiki.json", 'w', encoding="utf8") as wiki:
@@ -70,7 +73,11 @@ with open(f"docs/{id}/sinytra-wiki.json", 'w', encoding="utf8") as wiki:
         "modrinth": id,
         "curseforge": id
      }
-}, separators=(',\n', ': ')))
+}, indent=2))
+
+# Write _meta.json file
+with open(f"docs/{id}/_meta.json", 'w', encoding="utf8") as wiki:
+    wiki.write(json.dumps(meta, indent=2))
 
 print()
 print(f"Converted the GitHub Wiki of {git_path.replace("_", " ").replace("-", " ")} to a Modded Minecraft Wiki. Copy the newly generated docs folder into its GitHub repository.")
