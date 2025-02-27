@@ -1,4 +1,5 @@
 from git import Repo  # pip install gitpython
+import git # pip install gitpython
 from urllib.parse import urlparse
 import os
 import shutil
@@ -31,6 +32,12 @@ while git_url == "":
     git_url = input("What repository would you like to clone?\n")
     if (git_url.find("https://") == -1):
         git_url = ""
+    if (git_url != ""):
+        try:
+            clone(git_url, True) # Clone the wiki
+        except git.exc.GitError:
+            print("This repository does not exist (or is not public)!")
+            git_url = ""
 
     
 
@@ -41,10 +48,12 @@ id = git_path.lower()
 
 # Start script
 # clone(git_url, False) # Clone the main branch
-clone(git_url, True) # Clone the wiki
+# clone("https://github.com/Sinytra/Wiki", False) # Clone the wiki
+
 
 # Copy wiki over to a working directory, ignoring git files.
-shutil.rmtree("working")
+if (os.path.isdir("working")):
+    shutil.rmtree("working")
 shutil.copytree(git_path + ".wiki", 'working', dirs_exist_ok=True, ignore=shutil.ignore_patterns('.git'))
 
 # Create output folder
