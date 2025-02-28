@@ -7,12 +7,13 @@ from pathlib import Path
 import json
 import tomllib
 
-def getPath(url):
+def getPath(url: str):
     return urlparse(url).path.split("/")[-1]
 
-def clone(url, isWiki):
+def clone(url: str, isWiki: bool):
+    print(url)
     path = getPath(url)
-    if (isWiki):
+    if (isWiki and not (url.endswith(".wiki"))):
         path+=".wiki"
         url+=".wiki"
     if not os.path.isdir(path):
@@ -36,10 +37,11 @@ def toTitle(file: str):
 def convert(url):
     git_url = url
     while git_url == "":
-        git_url = input("What repository would you like to clone?\n")
+        git_url = input("What repository would you like to clone? (e.g. https://github.com/cassiancc/Pyrite)\n")
         if (git_url.find("https://") == -1):
             git_url = ""
         if (git_url != ""):
+            git_url = git_url.removesuffix(".git")
             try:
                 clone(git_url, True) # Clone the wiki
             except git.exc.GitError:
@@ -50,9 +52,14 @@ def convert(url):
     id = git_path.lower()
 
     # Copy wiki over to a working directory, ignoring git files.
-    if (os.path.isdir("working")):
-        shutil.rmtree("working")
-    shutil.copytree(git_path + ".wiki", 'working', dirs_exist_ok=True, ignore=shutil.ignore_patterns('.git'))
+    if (os.path.isdir(".working")):
+        shutil.rmtree(".working")
+    
+    wiki_path = git_path
+    if (not wiki_path.endswith(".wiki")):
+        wiki_path += ".wiki"
+    
+    shutil.copytree(wiki_path, '.working', dirs_exist_ok=True, ignore=shutil.ignore_patterns('.git'))
 
     # Create output folder
     if (not os.path.isdir("docs")):
@@ -65,7 +72,7 @@ def convert(url):
     meta = {}
 
     # Read markdown files and convert to MDX
-    for file in Path('working').glob('*'):
+    for file in Path('.working').glob('*'):
         with open(file, 'r', encoding="utf8") as original:
             old = original.read()
             with open(f"docs/{id}/{file.name.replace(".md", ".mdx")}", 'w', encoding="utf8") as modified:
