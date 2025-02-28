@@ -1,6 +1,6 @@
 # Git to Modded
 
-This Python script generates Modded Minecraft Wiki docs from a GitHub Wiki. This allows for developers to easily transfer their existing work from GitHub to the Modded Minecraft Wiki without having to manually rename files and add basic, scriptable information.
+This Python script generates Modded Minecraft Wiki docs from a GitHub/GitLab Wiki. This allows for developers to easily transfer their existing work from GitHub/GitLab to the Modded Minecraft Wiki without having to manually rename files and add basic, scriptable information.
 
 ## Requirements
 - Python 3 (tested on 3.13)
@@ -18,7 +18,7 @@ pip install gitpython
 
 ## Usage
 - Run `script.py`
-- Enter in a GitHub repository to download and convert.
+- Enter in a Git repository to download and convert.
 - The docs will be generated into a `/docs/modname` folder. You can repeat this step for as many mods as you wish to convert.
 - When you're finished, you're given the option to preview the docs. Note that live preview is still an unfinished feature.
 - When you're done with the script, you can copy your docs from `docs/modname` to your mod's GitHub repository. From there, finish setting up your Modded MC Wiki support as directed on the [Modded MC Wiki](https://moddedmc.wiki/en/about/devs).

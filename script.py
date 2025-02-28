@@ -6,14 +6,16 @@ from pathlib import Path
 
 # Functions used in the script.
 
+# Find the last segment of the URL - used to guess at folder names.
 def getPath(url: str):
     return urlparse(url).path.split("/")[-1]
 
 # Convert Markdown to MDX, and rename the homepage accordingly.
 def getNewFileName(file: Path):
-    if (file.name == "Home.md"):
+    if (file.name.lower() == "home.md"):
         return "_homepage.mdx"
-    return file.name.replace(".md", ".mdx")
+    new = str(file).replace(".md", ".mdx").removeprefix(".working\\").removeprefix(".working/")
+    return new
 
 # Create a folder if it does not already exist.
 def safeMkDir(path: str):
@@ -34,8 +36,7 @@ def clone(url: str, isWiki: bool):
         print(path+ " exists on disk, no need to clone.")
 
 def toTitle(file: str):
-    return file.replace("-", " ").replace("_", " ").strip().capitalize()
-
+    return file.replace("-", " ").replace("_", " ").strip().title()
 
 # Start script.
 
@@ -80,17 +81,17 @@ def convert(url):
         git_path = git_path.replace(".wiki", "")
 
     # get the id of the wiki, used for _meta.json
-    id = git_path.lower()
     meta = {}
+    id = git_path.lower()
     cf = id
     mr = id
     
     # Create output folders
-    shutil.copytree(f".cache/{wiki_path}", '.working', dirs_exist_ok=True, ignore=shutil.ignore_patterns('.git'))
+    shutil.copytree(f".cache/{wiki_path}", '.working', dirs_exist_ok=True, ignore=shutil.ignore_patterns('.git', ".gitlab", ".gitignore", "_sidebar.md"))
     safeMkDir("docs")
     safeMkDir("docs/"+id)
 
-    # Find the CurseForge URL from the README.md, if present.
+    # Find the CurseForge slug from the main project's README.md, if present.
     try:
         with open(f".cache/{git_path}/README.md", 'r', encoding="utf8") as original:
             README = original.read()
@@ -102,13 +103,16 @@ def convert(url):
         print("Unable to locate README!")
 
     # Read markdown files and convert to MDX
-    for file in Path('.working').glob('*'):
+    for file in Path('.working').rglob('*'):
         try:
             with open(file, 'r', encoding="utf8") as original:
-                README = original.read()
-                with open(f"docs/{id}/{getNewFileName(file)}", 'w', encoding="utf8") as modified:
-                    modified.write(f"---\ntitle: {toTitle(file.stem)}\n---\n\n{README}") # write the new line before
-                    meta[file.name] = toTitle(file.stem)
+                FILENAME = f"docs/{id}/{getNewFileName(file)}"
+                os.makedirs(os.path.dirname(FILENAME), exist_ok=True)
+                DOC = original.read()
+                if (file.name.endswith(".md")):
+                    with open(FILENAME, 'w', encoding="utf8") as modified:
+                        modified.write(f"---\ntitle: {toTitle(file.stem)}\n---\n\n{DOC}") # write the new line before
+                        meta[file.name] = toTitle(file.stem)
         except:
             pass
 
@@ -153,7 +157,6 @@ if (len(shouldRunPreview) > 0):
         roots = ""
         for doc in os.listdir("./preview"):
             roots += f"./preview/{doc};"
-        print(roots)
         os.environ['LOCAL_DOCS_ROOTS'] = roots
         os.system("npm install") # Install Wiki Dependencies
         os.system("npm run dev") # Run the Wiki
