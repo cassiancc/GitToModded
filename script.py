@@ -24,7 +24,7 @@ def clone(url, isWiki):
 def toTitle(file: str):
     return file.replace("-", " ").replace("_", " ").strip()
 
-git_url = "https://github.com/cassiancc/Item-Descriptions" # FIX BEFORE COMMIT
+git_url = ""
 
 
 
