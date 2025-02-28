@@ -12,6 +12,11 @@ import tomllib
 def getPath(url: str):
     return urlparse(url).path.split("/")[-1]
 
+def getNewFileName(file: Path):
+    if (file.name == "Home.md"):
+        return "_homepage.mdx"
+    return file.name.replace(".md", ".mdx")
+
 def safeMkDir(path: str):
     if (not os.path.isdir(path)):
         os.mkdir(path)
@@ -84,7 +89,7 @@ def convert(url):
     for file in Path('.working').glob('*'):
         with open(file, 'r', encoding="utf8") as original:
             old = original.read()
-            with open(f"docs/{id}/{file.name.replace(".md", ".mdx")}", 'w', encoding="utf8") as modified:
+            with open(f"docs/{id}/{getNewFileName(file)}", 'w', encoding="utf8") as modified:
                 modified.write(f"---\ntitle: {toTitle(file.stem)}\n---\n\n{old}") # write the new line before
                 meta[file.name] = toTitle(file.stem)
 
