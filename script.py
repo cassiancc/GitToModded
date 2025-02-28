@@ -1,11 +1,8 @@
-from git import Repo  # pip install gitpython
 import git # pip install gitpython
 from urllib.parse import urlparse
-import os
-import shutil
+import os, shutil, json,  re
 from pathlib import Path
-import json
-import tomllib
+
 
 # Functions used in the script.
 
@@ -30,7 +27,7 @@ def clone(url: str, isWiki: bool):
         url+=".wiki"
     if not os.path.isdir(path):
         print("Cloning " + path)
-        Repo.clone_from(url, path)
+        git.Repo.clone_from(url, path)
     else:
         print(path+ " exists on disk, no need to clone.")
 
@@ -55,6 +52,7 @@ def convert(url):
             # clone the wiki if possible
             try:
                 clone(git_url, True) # Clone the wiki
+                clone(git_url, False) # Clone the wiki
             except git.exc.GitError:
                 print("This repository does not exist (or is not public)!")
                 git_url = ""
@@ -84,13 +82,23 @@ def convert(url):
     safeMkDir("docs/"+id)
 
     meta = {}
+    cf = id
+    mr = id
+
+    with open(f"{git_path}/README.md", 'r', encoding="utf8") as original:
+        README = original.read()
+        cfmatch = re.search("https://[a-z]*\\.*curseforge.com/minecraft/[a-z-]*/[a-z-]*", README)
+        if (cfmatch):  
+            cf = getPath(cfmatch.group())
+            mr = cf
+
 
     # Read markdown files and convert to MDX
     for file in Path('.working').glob('*'):
         with open(file, 'r', encoding="utf8") as original:
-            old = original.read()
+            README = original.read()
             with open(f"docs/{id}/{getNewFileName(file)}", 'w', encoding="utf8") as modified:
-                modified.write(f"---\ntitle: {toTitle(file.stem)}\n---\n\n{old}") # write the new line before
+                modified.write(f"---\ntitle: {toTitle(file.stem)}\n---\n\n{README}") # write the new line before
                 meta[file.name] = toTitle(file.stem)
 
     # Write wiki.json file
@@ -98,8 +106,8 @@ def convert(url):
         wiki.write(json.dumps({
         "id": id.replace("_", "-"),
         "platforms": {
-            "modrinth": id,
-            "curseforge": id
+            "modrinth": mr,
+            "curseforge": cf
         }
     }, indent=2))
 
