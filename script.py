@@ -40,6 +40,7 @@ def toTitle(file: str):
 # Start script.
 
 def convert(url):
+    safeMkDir(".cache")
     git_url = url
     while git_url == "":
         git_url = input("What repository would you like to clone? (e.g. https://github.com/cassiancc/Pyrite)\n")
@@ -57,8 +58,10 @@ def convert(url):
                 git_url = git_url.replace("/-/wikis", ".wiki")
             # clone the wiki if possible
             try:
+                os.chdir(".cache")
                 clone(git_url, True) # Clone the wiki for data.
                 clone(git_url.replace(".wiki", ""), False) # Clone the main repository for metadata.
+                os.chdir("..")
             except git.exc.GitError:
                 print("This repository does not exist (or is not public)!")
                 git_url = ""
@@ -83,13 +86,13 @@ def convert(url):
     mr = id
     
     # Create output folders
-    shutil.copytree(wiki_path, '.working', dirs_exist_ok=True, ignore=shutil.ignore_patterns('.git'))
+    shutil.copytree(f".cache/{wiki_path}", '.working', dirs_exist_ok=True, ignore=shutil.ignore_patterns('.git'))
     safeMkDir("docs")
     safeMkDir("docs/"+id)
 
     # Find the CurseForge URL from the README.md, if present.
     try:
-        with open(f"{git_path}/README.md", 'r', encoding="utf8") as original:
+        with open(f".cache/{git_path}/README.md", 'r', encoding="utf8") as original:
             README = original.read()
             cfmatch = re.search("https://[a-z]*\\.*curseforge.com/minecraft/[a-z-]*/[a-z-]*", README)
             if (cfmatch):  
