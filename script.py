@@ -94,10 +94,22 @@ def convert(url):
     try:
         with open(f".cache/{git_path}/README.md", 'r', encoding="utf8") as original:
             README = original.read()
+            # Find CurseForge from README
             cfmatch = re.search("https://[a-z]*\\.*curseforge.com/minecraft/[a-z-]*/[a-z-]*", README)
             if (cfmatch):  
                 cf = getPath(cfmatch.group())
                 mr = cf
+            # Find Modrinth from README
+            mrmatch = re.search("https://modrinth.com/[a-z-]*/[a-z-+]*", README)
+            if (mrmatch):  
+                mr = getPath(mrmatch.group())
+                print(mr)
+            # If CurseForge is found, but not Modrinth, assume Modrinth and CurseForge links are the same.
+            elif (cfmatch):
+                mr = cf
+            # If Modrinth is found, but not CurseForge, assume Modrinth and CurseForge links are the same.
+            if (mrmatch and not cfmatch):
+                cf = mr
     except:
         print("Unable to locate README!")
 
