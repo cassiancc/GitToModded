@@ -7,12 +7,19 @@ from pathlib import Path
 import json
 import tomllib
 
+# Functions used in the script.
+
 def getPath(url: str):
     return urlparse(url).path.split("/")[-1]
+
+def safeMkDir(path: str):
+    if (not os.path.isdir(path)):
+        os.mkdir(path)
 
 def clone(url: str, isWiki: bool):
     print(url)
     path = getPath(url)
+    # .wiki is assumed, but if it's added to the url make sure that its handled.
     if (isWiki and not (url.endswith(".wiki"))):
         path+=".wiki"
         url+=".wiki"
@@ -26,13 +33,7 @@ def toTitle(file: str):
     return file.replace("-", " ").replace("_", " ").strip()
 
 
-
-
-
-
-
-# Start script
-# clone(git_url, False) # Clone the main branch
+# Start script.
 
 def convert(url):
     git_url = url
@@ -41,15 +42,20 @@ def convert(url):
         if (git_url.find("https://") == -1):
             git_url = ""
         if (git_url != ""):
+            # ignore .git urls, they'll only confuse later code elements.
             git_url = git_url.removesuffix(".git")
+            # if a user provides the link to the wiki, replace that with the correct link
+            if (git_url.endswith("/wiki")):
+                git_url = git_url.replace("/wiki", ".wiki")
+            # clone the wiki if possible
             try:
                 clone(git_url, True) # Clone the wiki
             except git.exc.GitError:
                 print("This repository does not exist (or is not public)!")
                 git_url = ""
 
+    # get the name of the wiki - used for folder naming
     git_path = getPath(git_url)
-    id = git_path.lower()
 
     # Copy wiki over to a working directory, ignoring git files.
     if (os.path.isdir(".working")):
@@ -58,16 +64,19 @@ def convert(url):
     wiki_path = git_path
     if (not wiki_path.endswith(".wiki")):
         wiki_path += ".wiki"
+    else:
+        git_path = git_path.replace(".wiki", "")
+
+    # get the id of the wiki, used for _meta.json
+    id = git_path.lower()
     
     shutil.copytree(wiki_path, '.working', dirs_exist_ok=True, ignore=shutil.ignore_patterns('.git'))
 
     # Create output folder
-    if (not os.path.isdir("docs")):
-        os.mkdir("docs")
+    safeMkDir("docs")
 
     # Create output folder
-    if (not os.path.isdir("docs/"+id)):
-        os.mkdir("docs/"+id)
+    safeMkDir("docs/"+id)
 
     meta = {}
 
@@ -82,7 +91,7 @@ def convert(url):
     # Write wiki.json file
     with open(f"docs/{id}/sinytra-wiki.json", 'w', encoding="utf8") as wiki:
         wiki.write(json.dumps({
-        "id": id,
+        "id": id.replace("_", "-"),
         "platforms": {
             "modrinth": id,
             "curseforge": id
@@ -101,12 +110,17 @@ def convert(url):
 
 convert("")
 
+# Run a live preview by cloning the Modded MC Wiki, installing its dependencies, and running it in local preview mode.
 shouldRunPreview = input("Would you like to preview the Wiki? (y/n)\n")
 if (shouldRunPreview[0].lower() == "y"):
     os.environ['ENABLE_LOCAL_PREVIEW'] = "true" # Set the Wiki to local preview.
-    os.environ['LOCAL_DOCS_ROOTS'] = f"./example/docs/{id}"
     clone("https://github.com/Sinytra/Wiki", False) # Clone the wiki
-    shutil.copytree("docs", 'Wiki/example/docs', dirs_exist_ok=True, ignore=shutil.ignore_patterns('.git'))
+    shutil.copytree("docs", 'Wiki/preview', dirs_exist_ok=True, ignore=shutil.ignore_patterns('.git'))
     os.chdir("Wiki") # Open the Wiki
+    roots = ""
+    for doc in os.listdir("./preview"):
+        roots += f"./preview/{doc};"
+    print(roots)
+    os.environ['LOCAL_DOCS_ROOTS'] = roots
     os.system("npm install") # Install Wiki Dependencies
     os.system("npm run dev") # Run the Wiki
