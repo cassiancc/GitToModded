@@ -22,20 +22,19 @@ def safeMkDir(path: str):
 
 # Clone a GitHub Repository.
 def clone(url: str, isWiki: bool):
-    print(url)
     path = getPath(url)
     # .wiki is assumed, but if it's added to the url make sure that its handled.
     if (isWiki and not (url.endswith(".wiki"))):
         path+=".wiki"
         url+=".wiki"
     if not os.path.isdir(path):
-        print("Cloning " + path)
+        print(f"Cloning {path} ({url})")
         git.Repo.clone_from(url, path)
     else:
         print(path+ " exists on disk, no need to clone.")
 
 def toTitle(file: str):
-    return file.replace("-", " ").replace("_", " ").strip()
+    return file.replace("-", " ").replace("_", " ").strip().capitalize()
 
 
 # Start script.
@@ -50,12 +49,16 @@ def convert(url):
             # ignore .git urls, they'll only confuse later code elements.
             git_url = git_url.removesuffix(".git")
             # if a user provides the link to the wiki, replace that with the correct link
-            if (git_url.endswith("/wiki")):
+            if (git_url.endswith("/wiki")): #github
                 git_url = git_url.replace("/wiki", ".wiki")
+            elif (git_url.endswith("/-/wikis/home")): #gitlab
+                git_url = git_url.replace("/-/wikis/home", ".wiki")
+            elif (git_url.endswith("/-/wikis")): #gitlab
+                git_url = git_url.replace("/-/wikis", ".wiki")
             # clone the wiki if possible
             try:
                 clone(git_url, True) # Clone the wiki for data.
-                clone(git_url, False) # Clone the main repository for metadata.
+                clone(git_url.replace(".wiki", ""), False) # Clone the main repository for metadata.
             except git.exc.GitError:
                 print("This repository does not exist (or is not public)!")
                 git_url = ""
@@ -97,11 +100,14 @@ def convert(url):
 
     # Read markdown files and convert to MDX
     for file in Path('.working').glob('*'):
-        with open(file, 'r', encoding="utf8") as original:
-            README = original.read()
-            with open(f"docs/{id}/{getNewFileName(file)}", 'w', encoding="utf8") as modified:
-                modified.write(f"---\ntitle: {toTitle(file.stem)}\n---\n\n{README}") # write the new line before
-                meta[file.name] = toTitle(file.stem)
+        try:
+            with open(file, 'r', encoding="utf8") as original:
+                README = original.read()
+                with open(f"docs/{id}/{getNewFileName(file)}", 'w', encoding="utf8") as modified:
+                    modified.write(f"---\ntitle: {toTitle(file.stem)}\n---\n\n{README}") # write the new line before
+                    meta[file.name] = toTitle(file.stem)
+        except:
+            pass
 
     # Write wiki.json file
     with open(f"docs/{id}/sinytra-wiki.json", 'w', encoding="utf8") as wiki:
@@ -117,8 +123,16 @@ def convert(url):
     with open(f"docs/{id}/_meta.json", 'w', encoding="utf8") as wiki:
         wiki.write(json.dumps(meta, indent=2))
 
+    # Check source of wiki for output.
+    if (urlparse(git_url).netloc == "github.com"):
+        src = "GitHub"
+    elif (urlparse(git_url).netloc == "gitlab.com"):
+        src = "GitLab"
+    else:
+        src = "Git"
+
     print()
-    shouldRunAgain = input(f"Converted the GitHub Wiki of {toTitle(git_path)} to a Modded Minecraft Wiki. Would you like to convert another wiki? (y/n, or paste URL)\n")
+    shouldRunAgain = input(f"Converted the {src} Wiki of {toTitle(git_path)} to a Modded Minecraft Wiki. Would you like to convert another wiki? (y/n, or paste URL)\n")
     if (len(shouldRunAgain) > 0):
         if ((shouldRunAgain[0].lower() == "y") or (shouldRunAgain.find("https") != -1)):
             convert(shouldRunAgain)
@@ -127,15 +141,16 @@ convert("")
 
 # Run a live preview by cloning the Modded MC Wiki, installing its dependencies, and running it in local preview mode.
 shouldRunPreview = input("Would you like to preview the Wiki? (y/n)\n")
-if (shouldRunPreview[0].lower() == "y"):
-    os.environ['ENABLE_LOCAL_PREVIEW'] = "true" # Set the Wiki to local preview.
-    clone("https://github.com/Sinytra/Wiki", False) # Clone the wiki
-    shutil.copytree("docs", 'Wiki/preview', dirs_exist_ok=True, ignore=shutil.ignore_patterns('.git'))
-    os.chdir("Wiki") # Open the Wiki
-    roots = ""
-    for doc in os.listdir("./preview"):
-        roots += f"./preview/{doc};"
-    print(roots)
-    os.environ['LOCAL_DOCS_ROOTS'] = roots
-    os.system("npm install") # Install Wiki Dependencies
-    os.system("npm run dev") # Run the Wiki
+if (len(shouldRunPreview) > 0):
+    if (shouldRunPreview[0].lower() == "y"):
+        os.environ['ENABLE_LOCAL_PREVIEW'] = "true" # Set the Wiki to local preview.
+        clone("https://github.com/Sinytra/Wiki", False) # Clone the wiki
+        shutil.copytree("docs", 'Wiki/preview', dirs_exist_ok=True, ignore=shutil.ignore_patterns('.git'))
+        os.chdir("Wiki") # Open the Wiki
+        roots = ""
+        for doc in os.listdir("./preview"):
+            roots += f"./preview/{doc};"
+        print(roots)
+        os.environ['LOCAL_DOCS_ROOTS'] = roots
+        os.system("npm install") # Install Wiki Dependencies
+        os.system("npm run dev") # Run the Wiki
