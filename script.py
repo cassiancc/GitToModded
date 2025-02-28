@@ -9,15 +9,18 @@ from pathlib import Path
 def getPath(url: str):
     return urlparse(url).path.split("/")[-1]
 
+# Convert Markdown to MDX, and rename the homepage accordingly.
 def getNewFileName(file: Path):
     if (file.name == "Home.md"):
         return "_homepage.mdx"
     return file.name.replace(".md", ".mdx")
 
+# Create a folder if it does not already exist.
 def safeMkDir(path: str):
     if (not os.path.isdir(path)):
         os.mkdir(path)
 
+# Clone a GitHub Repository.
 def clone(url: str, isWiki: bool):
     print(url)
     path = getPath(url)
@@ -51,8 +54,8 @@ def convert(url):
                 git_url = git_url.replace("/wiki", ".wiki")
             # clone the wiki if possible
             try:
-                clone(git_url, True) # Clone the wiki
-                clone(git_url, False) # Clone the wiki
+                clone(git_url, True) # Clone the wiki for data.
+                clone(git_url, False) # Clone the main repository for metadata.
             except git.exc.GitError:
                 print("This repository does not exist (or is not public)!")
                 git_url = ""
@@ -72,26 +75,25 @@ def convert(url):
 
     # get the id of the wiki, used for _meta.json
     id = git_path.lower()
-    
-    shutil.copytree(wiki_path, '.working', dirs_exist_ok=True, ignore=shutil.ignore_patterns('.git'))
-
-    # Create output folder
-    safeMkDir("docs")
-
-    # Create output folder
-    safeMkDir("docs/"+id)
-
     meta = {}
     cf = id
     mr = id
+    
+    # Create output folders
+    shutil.copytree(wiki_path, '.working', dirs_exist_ok=True, ignore=shutil.ignore_patterns('.git'))
+    safeMkDir("docs")
+    safeMkDir("docs/"+id)
 
-    with open(f"{git_path}/README.md", 'r', encoding="utf8") as original:
-        README = original.read()
-        cfmatch = re.search("https://[a-z]*\\.*curseforge.com/minecraft/[a-z-]*/[a-z-]*", README)
-        if (cfmatch):  
-            cf = getPath(cfmatch.group())
-            mr = cf
-
+    # Find the CurseForge URL from the README.md, if present.
+    try:
+        with open(f"{git_path}/README.md", 'r', encoding="utf8") as original:
+            README = original.read()
+            cfmatch = re.search("https://[a-z]*\\.*curseforge.com/minecraft/[a-z-]*/[a-z-]*", README)
+            if (cfmatch):  
+                cf = getPath(cfmatch.group())
+                mr = cf
+    except:
+        print("Unable to locate README!")
 
     # Read markdown files and convert to MDX
     for file in Path('.working').glob('*'):
