@@ -3,8 +3,9 @@
 This Python script generates Modded Minecraft Wiki docs from a GitHub Wiki.
 
 ## Requirements
-- Python
-- gitpython
+- Python 3 (tested on 3.13)
+    - gitpython
+- Node.js (if you want to preview the Wiki)
 
 ## Installation
 
@@ -13,6 +14,7 @@ This Python script generates Modded Minecraft Wiki docs from a GitHub Wiki.
 ```bash
 pip install gitpython
 ```
+- [Install Node.js](https://nodejs.org/en/download)
 
 ## Usage
 - Run `script.py`
