@@ -29,6 +29,7 @@ def clone(url: str, isWiki: bool):
     if (isWiki and not (url.endswith(".wiki"))):
         path+=".wiki"
         url+=".wiki"
+    # If the wiki isn't cached, clone it.
     if not os.path.isdir(path):
         print(f"Cloning {path} ({url})")
         git.Repo.clone_from(url, path)
@@ -45,7 +46,7 @@ def convert(url):
     git_url = url
     while git_url == "":
         git_url = input("What repository would you like to clone? (e.g. https://github.com/cassiancc/Pyrite)\n")
-        if (git_url.find("https://") == -1):
+        if (git_url.find("https://") == -1 and not os.path.isdir(f".cache/{url}")):
             git_url = ""
         if (git_url != ""):
             # ignore .git urls, they'll only confuse later code elements.
@@ -69,11 +70,6 @@ def convert(url):
 
     # get the name of the wiki - used for folder naming
     git_path = getPath(git_url)
-
-    # Copy wiki over to a working directory, ignoring git files.
-    if (os.path.isdir(".working")):
-        shutil.rmtree(".working")
-    
     wiki_path = git_path
     if (not wiki_path.endswith(".wiki")):
         wiki_path += ".wiki"
@@ -86,8 +82,11 @@ def convert(url):
     cf = id
     mr = id
     
-    # Create output folders
+    # Copy wiki over to a working directory, ignoring git files.
+    if (os.path.isdir(".working")):
+        shutil.rmtree(".working")
     shutil.copytree(f".cache/{wiki_path}", '.working', dirs_exist_ok=True, ignore=shutil.ignore_patterns('.git', ".gitlab", ".gitignore", "_sidebar.md"))
+    # Create output folders
     safeMkDir("docs")
     safeMkDir("docs/"+id)
 
