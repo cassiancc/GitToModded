@@ -22,3 +22,12 @@ pip install gitpython
 - The docs will be generated into a `/docs/modname` folder. You can repeat this step for as many mods as you wish to convert.
 - When you're finished, you're given the option to preview the docs. Note that live preview is still an unfinished feature.
 - When you're done with the script, you can copy your docs from `docs/modname` to your mod's GitHub repository. From there, finish setting up your Modded MC Wiki support as directed on the [Modded MC Wiki](https://moddedmc.wiki/en/about/devs).
+
+## Feature Roadmap
+
+- Conversion of relative links
+- Conversion of images
+    - Conversion of images from GitLab
+    - Conversion of images from Gitbook
+- Generating `_meta_json` files for subdirectories.
+- Generating Modrinth and CurseForge slugs from `fabric.mod.json` and `mods.toml`

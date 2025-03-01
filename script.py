@@ -5,7 +5,8 @@ from pathlib import Path
 
 
 # Functions used in the script.
-
+true = True
+false = False
 # Find the last segment of the URL - used to guess at folder names.
 def getPath(url: str):
     return urlparse(url).path.split("/")[-1]
@@ -39,6 +40,13 @@ def clone(url: str, isWiki: bool):
 def toTitle(file: str):
     return file.replace("-", " ").replace("_", " ").strip().title()
 
+def userPrompt(prompt: str):
+    userInput = input(f"{prompt}\n")
+    if (len(userInput) > 0):
+        if (userInput[0].lower() == "y"):
+            return True
+    return False
+
 # Start script.
 
 def convert(url):
@@ -59,19 +67,28 @@ def convert(url):
             elif (git_url.endswith("/-/wikis")): #gitlab
                 git_url = git_url.replace("/-/wikis", ".wiki")
             # clone the wiki if possible
+            os.chdir(".cache")
             try:
-                os.chdir(".cache")
-                clone(git_url, True) # Clone the wiki for data.
-                clone(git_url.replace(".wiki", ""), False) # Clone the main repository for metadata.
-                os.chdir("..")
+                clone(git_url.replace(".wiki", ""), False) # Clone the main repository for metadata - or if it has no wiki.
+                success = True
+                try:
+                    clone(git_url, true) # Clone the wiki for data.
+                    # clone(git_url.replace(".wiki", ""), False) # Clone the main repository for metadata.
+                except git.exc.GitError:
+                    print("\nThis repository has no associated wiki!")
+                    useMainRepo = userPrompt("Would you like to treat the main repo as the wiki? (e.g. Gitbook) (y/n)")
+                    if (not useMainRepo):
+                        git_url = ""
             except git.exc.GitError:
                 print("This repository does not exist (or is not public)!")
                 git_url = ""
+            os.chdir("..")
+
 
     # get the name of the wiki - used for folder naming
     git_path = getPath(git_url)
     wiki_path = git_path
-    if (not wiki_path.endswith(".wiki")):
+    if (not wiki_path.endswith(".wiki") and not useMainRepo):
         wiki_path += ".wiki"
     else:
         git_path = git_path.replace(".wiki", "")
@@ -148,9 +165,12 @@ def convert(url):
         src = "GitLab"
     else:
         src = "Git"
+    if (useMainRepo):
+        src += " Repository"
+    else:
+        src += " Wiki of "
 
-    print()
-    shouldRunAgain = input(f"Converted the {src} Wiki of {toTitle(git_path)} to a Modded Minecraft Wiki. Would you like to convert another wiki? (y/n, or paste URL)\n")
+    shouldRunAgain = input(f"\nConverted the {src} {toTitle(git_path)} to a Modded Minecraft Wiki. Would you like to convert another wiki? (y/n, or paste URL)\n")
     if (len(shouldRunAgain) > 0):
         if ((shouldRunAgain[0].lower() == "y") or (shouldRunAgain.find("https") != -1)):
             convert(shouldRunAgain)
@@ -158,16 +178,14 @@ def convert(url):
 convert("")
 
 # Run a live preview by cloning the Modded MC Wiki, installing its dependencies, and running it in local preview mode.
-shouldRunPreview = input("Would you like to preview the Wiki? (y/n)\n")
-if (len(shouldRunPreview) > 0):
-    if (shouldRunPreview[0].lower() == "y"):
-        os.environ['ENABLE_LOCAL_PREVIEW'] = "true" # Set the Wiki to local preview.
-        clone("https://github.com/Sinytra/Wiki", False) # Clone the wiki
-        shutil.copytree("docs", 'Wiki/preview', dirs_exist_ok=True, ignore=shutil.ignore_patterns('.git'))
-        os.chdir("Wiki") # Open the Wiki
-        roots = ""
-        for doc in os.listdir("./preview"):
-            roots += f"./preview/{doc};"
-        os.environ['LOCAL_DOCS_ROOTS'] = roots
-        os.system("npm install") # Install Wiki Dependencies
-        os.system("npm run dev") # Run the Wiki
+if (userPrompt("Would you like to preview the Wiki? (y/n)")):
+    os.environ['ENABLE_LOCAL_PREVIEW'] = "true" # Set the Wiki to local preview.
+    clone("https://github.com/Sinytra/Wiki", False) # Clone the wiki
+    shutil.copytree("docs", 'Wiki/preview', dirs_exist_ok=True, ignore=shutil.ignore_patterns('.git'))
+    os.chdir("Wiki") # Open the Wiki
+    roots = ""
+    for doc in os.listdir("./preview"):
+        roots += f"./preview/{doc};"
+    os.environ['LOCAL_DOCS_ROOTS'] = roots
+    os.system("npm install") # Install Wiki Dependencies
+    os.system("npm run dev") # Run the Wiki
