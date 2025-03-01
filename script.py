@@ -67,9 +67,12 @@ def replaceCover(original: str, id: str):
 # Start script.
 
 def convert(url, auto):
+    # Clear cache
     safeMkDir(".cache")
     git_url = url
+    # Use main repo - defaults to disabled, allows for using the main repo instead of its associated wiki. Useful for Gitbook users.
     useMainRepo = False
+    # Request a Git URL from the user and clone it and its associated wiki.
     while git_url == "":
         git_url = input("What repository would you like to clone? (e.g. https://github.com/cassiancc/Pyrite)\n")
         if (git_url.find("https://") == -1 and not os.path.isdir(f".cache/{url}")):
@@ -84,13 +87,12 @@ def convert(url, auto):
                 git_url = git_url.replace("/-/wikis/home", ".wiki")
             elif (git_url.endswith("/-/wikis")): #gitlab
                 git_url = git_url.replace("/-/wikis", ".wiki")
-            # clone the wiki if possible
+            # clone the wiki into cache if possible
             os.chdir(".cache")
             try:
                 clone(git_url.replace(".wiki", ""), False) # Clone the main repository for metadata - or if it has no wiki.
                 try:
                     clone(git_url, True) # Clone the wiki for data.
-                    # clone(git_url.replace(".wiki", ""), False) # Clone the main repository for metadata.
                 except git.exc.GitError:
                     print("\nThis repository has no associated wiki!")
                     useMainRepo = userPrompt("Would you like to treat the main repo as the wiki? (e.g. Gitbook) (y/n)")
@@ -100,7 +102,6 @@ def convert(url, auto):
                 print("This repository does not exist (or is not public)!")
                 git_url = ""
             os.chdir("..")
-
 
     # get the name of the wiki - used for folder naming
     git_path = getPath(git_url)
@@ -158,7 +159,13 @@ def convert(url, auto):
                     if (DOC.find("cover: ") != -1):
                         DOC = replaceCover(DOC, id)
                     with open(FILENAME, 'w', encoding="utf8") as modified:
-                        modified.write(f"---\ntitle: {toTitle(file.stem)}\n---\n\n{DOC}") # write the new line before
+                        title = f"\ntitle: {toTitle(file.stem)}\n"
+                        test = DOC[:3] == "---"
+                        if (test == True):
+                            DOC = DOC[:3] + title + DOC[3:]
+                            modified.write(DOC)
+                        else:
+                            modified.write(f"---{title}---\n\n{DOC}") # write the new line before
                         meta[file.name] = toTitle(file.stem)
         except:
             pass
