@@ -1,15 +1,19 @@
 import git # pip install gitpython
 from urllib.parse import urlparse
-import os, shutil, json,  re
+import os, shutil, json,  re, sys
 from pathlib import Path
 
 
 # Functions used in the script.
-true = True
-false = False
+
 # Find the last segment of the URL - used to guess at folder names.
 def getPath(url: str):
     return urlparse(url).path.split("/")[-1]
+
+def autoinput(s: str):
+    if (not auto):
+        return input(s)
+    return False
 
 # Convert Markdown to MDX, and rename the homepage accordingly.
 def getNewFileName(file: Path):
@@ -41,17 +45,19 @@ def toTitle(file: str):
     return file.replace("-", " ").replace("_", " ").strip().title()
 
 def userPrompt(prompt: str):
-    userInput = input(f"{prompt}\n")
-    if (len(userInput) > 0):
-        if (userInput[0].lower() == "y"):
-            return True
+    if (not auto):
+        userInput = input(f"{prompt}\n")
+        if (len(userInput) > 0):
+            if (userInput[0].lower() == "y"):
+                return True
     return False
 
 # Start script.
 
-def convert(url):
+def convert(url, auto):
     safeMkDir(".cache")
     git_url = url
+    useMainRepo = False
     while git_url == "":
         git_url = input("What repository would you like to clone? (e.g. https://github.com/cassiancc/Pyrite)\n")
         if (git_url.find("https://") == -1 and not os.path.isdir(f".cache/{url}")):
@@ -70,9 +76,8 @@ def convert(url):
             os.chdir(".cache")
             try:
                 clone(git_url.replace(".wiki", ""), False) # Clone the main repository for metadata - or if it has no wiki.
-                success = True
                 try:
-                    clone(git_url, true) # Clone the wiki for data.
+                    clone(git_url, True) # Clone the wiki for data.
                     # clone(git_url.replace(".wiki", ""), False) # Clone the main repository for metadata.
                 except git.exc.GitError:
                     print("\nThis repository has no associated wiki!")
@@ -168,14 +173,26 @@ def convert(url):
     if (useMainRepo):
         src += " Repository"
     else:
-        src += " Wiki of "
+        src += " Wiki of"
+    
+    result = f"\nConverted the {src} {toTitle(git_path)} to a Modded Minecraft Wiki."
+    if (not auto):
+        shouldRunAgain = input(f"{result} Would you like to convert another wiki? (y/n, or paste URL)\n")
+        if (len(shouldRunAgain) > 0):
+            if ((shouldRunAgain[0].lower() == "y") or (shouldRunAgain.find("https") != -1)):
+                convert(shouldRunAgain)
+    else: print(result)
 
-    shouldRunAgain = input(f"\nConverted the {src} {toTitle(git_path)} to a Modded Minecraft Wiki. Would you like to convert another wiki? (y/n, or paste URL)\n")
-    if (len(shouldRunAgain) > 0):
-        if ((shouldRunAgain[0].lower() == "y") or (shouldRunAgain.find("https") != -1)):
-            convert(shouldRunAgain)
 
-convert("")
+val = ""
+auto = False
+NARGS = len(sys.argv)
+if (NARGS > 0):
+    val = sys.argv[1]
+    if (NARGS > 1):
+        if (sys.argv[2] == "auto"):
+            auto = True
+convert(val, auto)
 
 # Run a live preview by cloning the Modded MC Wiki, installing its dependencies, and running it in local preview mode.
 if (userPrompt("Would you like to preview the Wiki? (y/n)")):
