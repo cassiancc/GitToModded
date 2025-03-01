@@ -35,9 +35,7 @@ These are the features I'm actively working on. If you want to improve the scrip
 
 - Conversion of relative links from GitHub wikis.
 - Generating `_meta_json` files for wikis with subdirectories.
-- Migration of images.
-    - Migration of images from GitLab wikis.
-    - Migration of images from Gitbook wikis.
+- Conversion of relative image links from GitLab wikis to image components.
 - Generating Modrinth and CurseForge slugs from other common sources of metadata (currently only README.md is supported)
     - `fabric.mod.json` and `mods.toml`
     - GitHub footers.

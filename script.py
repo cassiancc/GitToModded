@@ -123,7 +123,9 @@ def convert(url, auto):
     shutil.copytree(f".cache/{wiki_path}", '.working', dirs_exist_ok=True, ignore=shutil.ignore_patterns('.git', ".gitlab", ".gitignore", "_sidebar.md"))
     # Create output folders
     safeMkDir("docs")
-    safeMkDir("docs/"+id)
+    safeMkDir(f"docs/{id}")
+    safeMkDir(f"docs/{id}/.assets")
+    safeMkDir(f"docs/{id}/.assets/{id}")
 
     # Find the CurseForge slug from the main project's README.md, if present.
     try:
@@ -150,25 +152,28 @@ def convert(url, auto):
 
     # Read markdown files and convert to MDX
     for file in Path('.working').rglob('*'):
-        try:
-            with open(file, 'r', encoding="utf8") as original:
-                FILENAME = f"docs/{id}/{getNewFileName(file)}"
-                os.makedirs(os.path.dirname(FILENAME), exist_ok=True)
-                DOC = original.read()
-                if (file.name.endswith(".md")):
-                    if (DOC.find("cover: ") != -1):
-                        DOC = replaceCover(DOC, id)
-                    with open(FILENAME, 'w', encoding="utf8") as modified:
-                        title = f"\ntitle: {toTitle(file.stem)}\n"
-                        test = DOC[:3] == "---"
-                        if (test == True):
-                            DOC = DOC[:3] + title + DOC[3:]
-                            modified.write(DOC)
-                        else:
-                            modified.write(f"---{title}---\n\n{DOC}") # write the new line before
-                        meta[file.name] = toTitle(file.stem)
-        except:
-            pass
+        if (file.name.endswith(".png")):
+            shutil.copyfile(file, f"docs/{id}/.assets/{id}/{file.name}")
+        else:
+            try:
+                with open(file, 'r', encoding="utf8") as original:
+                    FILENAME = f"docs/{id}/{getNewFileName(file)}"
+                    os.makedirs(os.path.dirname(FILENAME), exist_ok=True)
+                    DOC = original.read()
+                    if (file.name.endswith(".md")):
+                        if (DOC.find("cover: ") != -1):
+                            DOC = replaceCover(DOC, id)
+                        with open(FILENAME, 'w', encoding="utf8") as modified:
+                            title = f"\ntitle: {toTitle(file.stem)}\n"
+                            test = DOC[:3] == "---"
+                            if (test == True):
+                                DOC = DOC[:3] + title + DOC[3:]
+                                modified.write(DOC)
+                            else:
+                                modified.write(f"---{title}---\n\n{DOC}") # write the new line before
+                            meta[file.name] = toTitle(file.stem)
+            except:
+                pass
 
     # Write wiki.json file
     with open(f"docs/{id}/sinytra-wiki.json", 'w', encoding="utf8") as wiki:
