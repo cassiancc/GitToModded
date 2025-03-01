@@ -37,7 +37,7 @@ def clone(url: str, isWiki: bool):
     # If the wiki isn't cached, clone it.
     if not os.path.isdir(path):
         print(f"Cloning {path} ({url})")
-        git.Repo.clone_from(url, path)
+        git.Repo.clone_from(url, path, depth=1)
     else:
         print(path+ " exists on disk, no need to clone.")
 
