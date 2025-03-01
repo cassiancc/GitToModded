@@ -187,9 +187,9 @@ def convert(url, auto):
 val = ""
 auto = False
 NARGS = len(sys.argv)
-if (NARGS > 0):
+if (NARGS > 1):
     val = sys.argv[1]
-    if (NARGS > 1):
+    if (NARGS > 2):
         if (sys.argv[2] == "auto"):
             auto = True
 convert(val, auto)
