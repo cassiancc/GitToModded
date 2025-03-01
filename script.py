@@ -52,6 +52,18 @@ def userPrompt(prompt: str):
                 return True
     return False
 
+def replaceCover(original: str, id: str):
+    index = original.find("cover: ")
+    cover = original[index:]
+    index = cover.find("\n")
+    cover = cover[:index]
+    img = re.sub("cover: [./]*.gitbook\\/assets/", "", cover)
+    component = f"\n<Asset location=\"{id}:{img}\" />"
+    original = original.replace(cover, "")
+    index = original.rfind("---")+3
+    original = original[:index] + component + original[index:]
+    return original
+
 # Start script.
 
 def convert(url, auto):
@@ -143,6 +155,8 @@ def convert(url, auto):
                 os.makedirs(os.path.dirname(FILENAME), exist_ok=True)
                 DOC = original.read()
                 if (file.name.endswith(".md")):
+                    if (DOC.find("cover: ") != -1):
+                        DOC = replaceCover(DOC, id)
                     with open(FILENAME, 'w', encoding="utf8") as modified:
                         modified.write(f"---\ntitle: {toTitle(file.stem)}\n---\n\n{DOC}") # write the new line before
                         meta[file.name] = toTitle(file.stem)
