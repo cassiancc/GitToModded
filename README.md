@@ -33,7 +33,6 @@ pip install gitpython
 
 These are the features I'm actively working on. If you want to improve the script, feel free to PR at them, and if you have any other nice-to-haves, PRs and issues are welcome. These are roughly in a priority order.
 
-- Conversion of relative links from GitHub wikis.
 - Generating `_meta_json` files for wikis with subdirectories.
 - Conversion of relative image links from GitLab wikis to image components.
 - Generating Modrinth and CurseForge slugs from other common sources of metadata (currently only README.md is supported)

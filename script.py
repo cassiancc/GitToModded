@@ -64,6 +64,18 @@ def replaceCover(original: str, id: str):
     original = original[:index] + component + original[index:]
     return original
 
+# Replace GitHub relative links, turning:
+# [[Link Text|link-href]] into [Link Text](link-href)
+# which can be parsed by the Wiki.
+def replaceGitHubRelativeLinks(doc: str):
+    matches = re.findall("\\[\\[.*\\|.*\\]\\]", doc)
+    if (len(matches) != 0):
+        for match in matches:
+            replaced = str(match)
+            replaced = replaced.replace("[[", "[").replace("]]", ")").replace("|", "](")
+            doc = doc.replace(match, replaced)
+    return doc
+
 # Start script.
 
 def convert(url, auto):
@@ -159,18 +171,19 @@ def convert(url, auto):
                 with open(file, 'r', encoding="utf8") as original:
                     FILENAME = f"docs/{id}/{getNewFileName(file)}"
                     os.makedirs(os.path.dirname(FILENAME), exist_ok=True)
-                    DOC = original.read()
+                    doc = original.read()
                     if (file.name.endswith(".md")):
-                        if (DOC.find("cover: ") != -1):
-                            DOC = replaceCover(DOC, id)
+                        if (doc.find("cover: ") != -1):
+                            doc = replaceCover(doc, id)
+                        doc = replaceGitHubRelativeLinks(doc)
                         with open(FILENAME, 'w', encoding="utf8") as modified:
                             title = f"\ntitle: {toTitle(file.stem)}\n"
-                            test = DOC[:3] == "---"
+                            test = doc[:3] == "---"
                             if (test == True):
-                                DOC = DOC[:3] + title + DOC[3:]
-                                modified.write(DOC)
+                                doc = doc[:3] + title + doc[3:]
+                                modified.write(doc)
                             else:
-                                modified.write(f"---{title}---\n\n{DOC}") # write the new line before
+                                modified.write(f"---{title}---\n\n{doc}") # write the new line before
                             meta[file.name] = toTitle(file.stem)
             except:
                 pass
